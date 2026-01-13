@@ -12,6 +12,7 @@ import GigDetails from './pages/GigDetails';
 import MyGigs from './pages/MyGigs';
 import MyBids from './pages/MyBids';
 import ProtectedRoute from './components/ProtectedRoute';
+import './index.css';
 
 function App() {
   const dispatch = useDispatch();
