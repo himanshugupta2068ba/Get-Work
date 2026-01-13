@@ -36,9 +36,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/gigs', gigRoutes);
-app.use('/api/bids', bidRoutes);
+app.use('api/auth', authRoutes);
+app.use('api/gigs', gigRoutes);
+app.use('api/bids', bidRoutes);
 
 // Health check
 app.get('/', (req, res) => {
