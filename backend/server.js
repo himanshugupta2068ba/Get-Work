@@ -12,22 +12,17 @@ import bidRoutes from './routes/bids.js';
 
 dotenv.config();
 
-// Fail fast for missing required environment variables in production
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  console.error('FATAL: Missing required environment variable JWT_SECRET');
-  process.exit(1);
-}
-
 const app = express();
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
-// Middleware — MUST be before routes
+// 🔴 CORS (must be before routes)
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
@@ -35,30 +30,27 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// 🔴 THIS LINE IS CRITICAL
-app.options('*', cors());
+app.options('*', cors()); // 🔴 REQUIRED
 
 app.use(express.json());
 app.use(cookieParser());
-
-// Health check endpoint for load balancers/monitors
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/bids', bidRoutes);
 
-// Socket.io connection handling
+// Health check
+app.get('/', (req, res) => {
+  res.send('API running');
+});
+
+// Socket.io
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Handle room joining for user-specific notifications
   socket.on('join', (room) => {
     socket.join(room);
-    console.log(`User ${socket.id} joined room: ${room}`);
   });
 
   socket.on('disconnect', () => {
@@ -66,19 +58,19 @@ io.on('connection', (socket) => {
   });
 });
 
-// Make io available to routes
 app.set('io', io);
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gigflow')
+// DB + Server start
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    const PORT = process.env.PORT || 5000;
-    httpServer.listen(PORT, () => {
+
+    const PORT = process.env.PORT || 8080;
+    httpServer.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);
+    process.exit(1);
   });
-
