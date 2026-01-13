@@ -12,6 +12,12 @@ import bidRoutes from './routes/bids.js';
 
 dotenv.config();
 
+// Fail fast for missing required environment variables in production
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('FATAL: Missing required environment variable JWT_SECRET');
+  process.exit(1);
+}
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -21,13 +27,24 @@ const io = new Server(httpServer, {
   }
 });
 
-// Middleware
+// Middleware — MUST be before routes
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// 🔴 THIS LINE IS CRITICAL
+app.options('*', cors());
+
 app.use(express.json());
 app.use(cookieParser());
+
+// Health check endpoint for load balancers/monitors
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
