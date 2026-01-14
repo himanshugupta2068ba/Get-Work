@@ -1,0 +1,6 @@
+MONGODB_URI=
+JWT_SECRET=
+NODE_ENV=production
+FRONTEND_URL=http://localhost:5173
+VITE_API_URL=https://get-work-production.up.railway.app
+PORT=5000
